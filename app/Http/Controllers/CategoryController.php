@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CategoryStoreRequest;
-use App\Http\Requests\RegisterStoreRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -14,14 +13,23 @@ class CategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $categories = Category::latest()->get();
-             return response()->json([
-                'message' => 'Categories retrieved successfully',
-                'data' => $categories,
-             ], 200);
+            $query = Category::query();
+
+            $query->latest()->get();
+
+            if($request->has('search')) {
+                $query->where('name', 'like', '%' . $request->search . '%');
+            }
+
+            $categories = $query->get();
+
+            return response()->json([
+            'message' => 'Categories retrieved successfully',
+            'data' => CategoryResource::collection($categories),
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Errors occurred',
@@ -65,14 +73,20 @@ class CategoryController extends Controller
     public function show(string $id)
     {
         try {
-            $category = Category::FindOrFail($id);
+            $category = Category::query()->find($id);
+
+            if(!$category) {
+                return response()->json([
+                    'message' => 'Category not found',
+                    'data' => null,
+                ], 404);
+            }
 
             return response()->json([
                 'message' => 'Category retrieved successfully',
                 'data' => new CategoryResource($category),
             ], 200);
         } catch (\Exception $e) {
-            DB::rollBack();
             return response()->json([
                 'message' => 'Errors occurred',
                 'error' => $e->getMessage(),
@@ -84,7 +98,7 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(RegisterStoreRequest $request, string $id)
+    public function update(CategoryStoreRequest $request, string $id)
     {
         $data = $request->validated();
         DB::beginTransaction();
