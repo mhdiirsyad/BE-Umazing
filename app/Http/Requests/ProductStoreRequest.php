@@ -19,7 +19,7 @@ class ProductStoreRequest extends FormRequest
             'stock' => 'required|integer|min:0',
             'description' => 'required|string',
             'is_active' => 'required|boolean',
-            'category_id' => 'required|integer',
+            'category_id' => 'required|integer|exists:categories,id',
         ];
     }
 }

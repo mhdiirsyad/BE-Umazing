@@ -57,7 +57,7 @@ class ProductController extends Controller
             $newProduct['stock'] = $data['stock'];
             $newProduct['description'] = $data['description'];
             $newProduct['is_active'] = $data['is_active'];
-            $newProduct['catgeory_id'] = $data['category_id'];
+            $newProduct['category_id'] = $data['category_id'];
             $newProduct->save();
 
             DB::commit();
@@ -145,7 +145,7 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        DB::transaction();
+        DB::beginTransaction();
         try {
             $product = Product::query()->find($id);
             if(!$product){

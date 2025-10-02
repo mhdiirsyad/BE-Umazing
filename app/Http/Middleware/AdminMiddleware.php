@@ -17,8 +17,8 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if(!Auth::check() || Auth::user()->role !== 'admin') {
-            response()->json([
-                'message' => 'Forbidden',
+            return response()->json([
+                'message' => 'Admin required',
                 'data' => null,
             ], 403);
         }

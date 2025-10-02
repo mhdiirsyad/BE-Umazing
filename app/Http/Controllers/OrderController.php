@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -11,7 +12,17 @@ class OrderController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $orders = Order::query()->latest()->get();
+            
+            return response()->json([
+                'message' => 'Successfully get all orders',
+                'data' => $orders,
+            ], 200);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+
     }
 
     /**
