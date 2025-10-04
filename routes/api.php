@@ -25,6 +25,11 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::post('/cart/add', [CartController::class, 'add']);
     Route::put('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
+
+    // Order
+    Route::get('/order', [OrderController::class, 'index']);
+    Route::get('/order/{id}', [OrderController::class, 'show']);
+    Route::post('/order', [OrderController::class, 'store']);
 });
 
 Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function() {
@@ -37,4 +42,9 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function() {
     Route::post('/product', [ProductController::class, 'store']);
     Route::put('/product/{id}', [ProductController::class, 'update']);
     Route::delete('/product/{id}', [ProductController::class, 'destroy']);
+
+    // Order
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/order/{id}', [OrderController::class, 'show']);
+    Route::put('/order/id', [OrderController::class, 'update']);
 });
