@@ -52,7 +52,7 @@ class CartController extends Controller
             $item = $cart->cartItems()->where('product_id', $data['product_id'])->first();
 
             if($item) {
-                $item->quantity += $data->quantity;
+                $item->quantity += $data['quantity'];
                 $item->save();
             }else{
                 $product = Product::query()->findOrFail($data['product_id']);

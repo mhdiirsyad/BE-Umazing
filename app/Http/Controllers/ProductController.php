@@ -7,6 +7,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -56,8 +57,13 @@ class ProductController extends Controller
             $newProduct['price'] = $data['price'];
             $newProduct['stock'] = $data['stock'];
             $newProduct['description'] = $data['description'];
-            $newProduct['is_active'] = $data['is_active'];
+            $newProduct['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
             $newProduct['category_id'] = $data['category_id'];
+
+            if($request->hasFile('image')){
+                $image_path = $request->file('image')->store('products', 'public');
+                $newProduct['image'] = $image_path;
+            }
             $newProduct->save();
 
             DB::commit();
@@ -123,6 +129,12 @@ class ProductController extends Controller
             $product['description'] = $request['description'];
             $product['is_active'] = $request['is_active'];
             $product['category_id'] = $request['category_id'];
+
+            if($request->hasFile('image')){
+                Storage::delete($product['image']);
+                $image_path = $request->file('image')->store('products', 'public');
+                $product['image'] = $image_path;
+            }
             $product->save();
 
             DB::commit();
@@ -155,6 +167,7 @@ class ProductController extends Controller
                 ], 404);
             } 
 
+            Storage::delete($product['image']);
             $product->delete();
             DB::commit();
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
@@ -15,21 +16,25 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         try {
-            $orders = Order::query();
+            $query = Order::query()->with(['orderItems.product', 'user']);
 
             if($user->role !== 'admin'){
-                $orders->where('user_id', $user->id);
+                $query->where('user_id', $user->id);
             }
 
-            $orders->latest()->get();
+            if($request->has('search')){
+                $query->where('id', $request->get('search'));
+            }
+
+            $orders = $query->latest()->get();
             
             return response()->json([
                 'message' => 'Successfully get all orders',
-                'data' => $orders,
+                'data' => OrderResource::collection($orders),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -60,20 +65,32 @@ class OrderController extends Controller
                     'data' => null,
                 ], 400);
             }
+            
+            $total = 0;
+            foreach($cart->cartItems as $item){
+                if($item->product->stock < $item->quantity){
+                    throw new \Exception("Stock {$item->product->name} not suffient");
+                }
+
+                $price = $item->product->price;
+                $subtotal = $price * $item->quantity;
+                $total += $subtotal;
+            }
 
             $order = new Order();
             $order['user_id'] = $user->id;
             $order['status'] = 'pending';
             $order['address'] = $request->address;
-            $order['total'] = 0;
+            $order['total'] = $total;
             $order->save();
 
-            $total = 0;
-
-            foreach($cart->cartItems as $item){
-                $price = $item->product->price;
+            foreach ($cart->cartItems as $item) {
+                $product = $item->product;
+                $price = $product->price;
                 $subtotal = $price * $item->quantity;
 
+                $product->decrement('stock', $item->quantity);
+                
                 $orderItem = new OrderItem();
                 $orderItem['order_id'] = $order->id;
                 $orderItem['product_id'] = $item->product_id;         
@@ -81,12 +98,12 @@ class OrderController extends Controller
                 $orderItem['price'] = $price;         
                 $orderItem['subtotal'] = $subtotal;
                 $orderItem->save();
-
-                $total += $subtotal;
+                $item->delete();
             }
 
             $order['total'] = $total;
             $order->save();
+
 
             DB::commit();
 
@@ -110,7 +127,7 @@ class OrderController extends Controller
     {
         $user = Auth::user();
         try {
-            $order = Order::query();
+            $order = Order::query()->with(['orderItems.product', 'user']);
 
             if($user->role !== 'admin') {
                 $order->where('user_id', $user->id);
@@ -127,7 +144,7 @@ class OrderController extends Controller
 
             return response()->json([
                 'message' => 'Order found',
-                'data' => $order,
+                'data' => new OrderResource($order),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -143,12 +160,12 @@ class OrderController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,paid,shiping,success,cancelled'
+            'status' => 'required|in:pending,paid,shipped,success,cancelled'
         ]);
 
         DB::beginTransaction();
         try {
-            $order = Order::query()->find($id);
+            $order = Order::query()->with(['orderItems.product', 'user'])->find($id);
 
             if(!$order) {
                 return response()->json([
@@ -161,13 +178,20 @@ class OrderController extends Controller
             if($request->status === 'success') {
                 $order['completed_at'] = now();
             }
+
+            if($request->status === 'cancelled') {
+                foreach($order->orderItems as $item) {
+                    $item->product->stock += $item->quantity;
+                    $item->product->save();
+                }
+            }
             $order->save();
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Order status updated',
-                'data' => $order,
+                'data' => new OrderResource($order),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
