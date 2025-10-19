@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CartStoreRequest;
+use App\Http\Resources\CartResource;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -29,7 +30,7 @@ class CartController extends Controller
 
             return response()->json([
                 'message'=>'Cart found',
-                'data'=>$cart->load('cartItems.product'),
+                'data'=> new CartResource($cart),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -65,7 +66,7 @@ class CartController extends Controller
             DB::commit();
             return response()->json([
                 'message'=>'Item added to cart',
-                'data' => $cart->load('cartItems.product'),
+                'data' => new CartResource($cart),
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -111,7 +112,7 @@ class CartController extends Controller
         }
     }
 
-    public function removeItem(Request $request, $id)
+    public function removeItem($id)
     {
         $user = Auth::user();
         DB::beginTransaction();

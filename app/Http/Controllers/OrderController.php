@@ -27,7 +27,7 @@ class OrderController extends Controller
             }
 
             if($request->has('search')){
-                $query->where('id', $request->get('search'));
+                $query->where('id', 'like', (int)$request->get('search'));
             }
 
             $orders = $query->latest()->get();
@@ -109,7 +109,7 @@ class OrderController extends Controller
 
             return response()->json([
                 'message' => 'order successfully added',
-                'data' => $order->load('orderItems.product'),
+                'data' => new OrderResource($order),
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -127,13 +127,13 @@ class OrderController extends Controller
     {
         $user = Auth::user();
         try {
-            $order = Order::query()->with(['orderItems.product', 'user']);
+            $query = Order::query()->with(['orderItems.product', 'user']);
 
             if($user->role !== 'admin') {
-                $order->where('user_id', $user->id);
+                $query->where('user_id', $user->id);
             }
 
-            $order->find($id);
+            $order = $query->find($id);
 
             if(!$order) {
                 return response()->json([
@@ -160,7 +160,7 @@ class OrderController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,paid,shipped,success,cancelled'
+            'status' => 'required|in:pending,paid,shipped,success,canceled'
         ]);
 
         DB::beginTransaction();
@@ -194,6 +194,7 @@ class OrderController extends Controller
                 'data' => new OrderResource($order),
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'Errors occurred',
                 'error' => $e->getMessage(),

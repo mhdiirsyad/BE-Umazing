@@ -14,12 +14,16 @@ class Order extends Model
         'completed_at',
     ];
 
+    protected $cast = [
+        'completed_at' => 'datetime',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function OrderItems()
+    public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
     }

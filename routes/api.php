@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
@@ -18,8 +19,9 @@ Route::get('/product', [ProductController::class, 'index']);
 Route::get('/product/{id}', [ProductController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'role:user'])->group(function() {
+    // Cart
     Route::get('/cart', [CartController::class, 'index']);
-    Route::post('/cart/add', [CartController::class, 'add']);
+    Route::post('/cart', [CartController::class, 'add']);
     Route::put('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
 
@@ -39,7 +41,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function() {
     Route::delete('/product/{id}', [ProductController::class, 'destroy']);
 
     // Order
-    Route::put('/order/id', [OrderController::class, 'update']);
+    Route::patch('/order/{id}', [OrderController::class, 'update']);
+
+    // Stats
+    Route::get('/stats', [AdminController::class, 'getStatistics']);
 });
 
 Route::middleware(['auth:sanctum', 'role:user,admin'])->group(function() {

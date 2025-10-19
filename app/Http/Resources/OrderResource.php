@@ -22,7 +22,7 @@ class OrderResource extends JsonResource
             'status' => $this->status,
             'address' => $this->address,
             'created_at' => $this->created_at->format('Y-m-d H:i'),
-            'completed_at' => $this->completed_at ? $this->completed_at->format('Y-m-d H:i') : '-',
+            'completed_at' => optional($this->completed_at)->format('Y-m-d H:i') ?? '-',
             'order_items' => OrderItemResource::collection($this->orderItems),
         ];
     }
